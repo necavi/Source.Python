@@ -15,6 +15,8 @@ from menus.base import _translate_text
 from menus.queue import _radio_queues
 #   Messages
 from messages import ShowMenu
+#    Core
+from core import SOURCE_ENGINE_BRANCH
 
 
 # =============================================================================
@@ -184,7 +186,7 @@ class PagedRadioMenu(SimpleRadioMenu, _PagedMenuBase):
 
     def _get_max_item_count(self):
         """Return the maximum possible item count per page."""
-        return 7
+        return 6 if SOURCE_ENGINE_BRANCH == "csgo" else 7
 
     def _format_header(self, player_index, page, slots):
         """Prepare the header for the menu.
@@ -271,20 +273,23 @@ class PagedRadioMenu(SimpleRadioMenu, _PagedMenuBase):
         # Add "Back" option
         back_selectable = page.index > 0
         buffer += PagedRadioOption(
-            'Back', highlight=back_selectable)._render(player_index, 8)
+            'Back', highlight=back_selectable)._render(player_index, self._get_max_item_count() + 1)
         if back_selectable:
-            slots.add(8)
+            slots.add(self._get_max_item_count() + 1)
 
         # Add "Next" option
         next_selectable = page.index < self.last_page_index
         buffer += PagedRadioOption(
-            'Next', highlight=next_selectable)._render(player_index, 9)
+            'Next', highlight=next_selectable)._render(player_index, self._get_max_item_count() + 2)
         if next_selectable:
-            slots.add(9)
+            slots.add(self._get_max_item_count() + 2)
 
         # Add "Close" option
+        slot = (self._get_max_item_count() + 3) % 10
         buffer += PagedRadioOption(
-            'Close', highlight=False)._render(player_index, 0)
+            'Close', highlight=True)._render(player_index, slot)
+        if slot > 0:
+            slots.add(slot)
 
         # Return the buffer
         return buffer
@@ -323,7 +328,7 @@ class PagedRadioMenu(SimpleRadioMenu, _PagedMenuBase):
         A numeric value that defines what was selected.
         """
         # Do nothing if the menu is being closed
-        if choice_index == 0:
+        if choice_index == (self._get_max_item_count() + 3) % 10:
             del self._player_pages[player_index]
             return None
 
@@ -331,12 +336,12 @@ class PagedRadioMenu(SimpleRadioMenu, _PagedMenuBase):
         page = self._player_pages[player_index]
 
         # Display previous page?
-        if choice_index == 8:
+        if choice_index == self._get_max_item_count() + 1:
             self.set_player_page(player_index, page.index - 1)
             return self
 
         # Display next page?
-        if choice_index == 9:
+        if choice_index == self._get_max_item_count() + 2:
             self.set_player_page(player_index, page.index + 1)
             return self
 
